@@ -117,18 +117,21 @@ func Perform(args Arguments, writer io.Writer) error {
 		var arr []Item
 		for i, v := range items {
 			if v.Id == args["id"] {
-				arr = append(arr, items[:i]...)
-				if i < len(items) {
-					arr = append(arr, items[i+1:]...)
-				}
+				arr = append(items[:i], items[(i+1):]...)
+				break
 			}
 		}
-
+		if len(arr) == 0 {
+			writer.Write([]byte(fmt.Sprintf("Item with id %s not found", args["id"])))
+			return nil
+		}
 		res, err := json.Marshal(arr)
 		if err != nil {
 			panic(err)
 		}
-		if _, err = f.Write(res); err != nil {
+		f.Truncate(0)
+
+		if _, err = f.WriteAt(res, 0); err != nil {
 			panic(err)
 		}
 	}
