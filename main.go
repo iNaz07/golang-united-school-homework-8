@@ -40,7 +40,7 @@ func Perform(args Arguments, writer io.Writer) error {
 		return fmt.Errorf("-id flag has to be specified")
 	}
 
-	f, err := os.OpenFile("test.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	f, err := os.OpenFile("test.json", os.O_RDWR|os.O_CREATE, 0755)
 	if err != nil {
 		panic(err)
 	}
@@ -49,24 +49,30 @@ func Perform(args Arguments, writer io.Writer) error {
 			panic(err)
 		}
 	}()
-	fmt.Println("file is ", f)
 	r, err := ioutil.ReadAll(f)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("inside file", r)
-	fmt.Println("operation", args["operation"])
 
 	switch args["operation"] {
 	case "add":
-		var items []Item
-		if err = json.Unmarshal(r, &items); err != nil {
-			panic(err)
-		}
+
 		var item Item
 		if err = json.Unmarshal([]byte(args["item"]), &item); err != nil {
 			panic(err)
 		}
+		var items []Item
+		if len(r) != 0 {
+			if err = json.Unmarshal(r, &items); err != nil {
+				panic(err)
+			}
+			for _, v := range items {
+				if v.Id == item.Id {
+					writer.Write([]byte(fmt.Sprintf("Item with id %s already exists", item.Id)))
+				}
+			}
+		}
+
 		items = append(items, item)
 		res, err := json.Marshal(items)
 		if err != nil {
